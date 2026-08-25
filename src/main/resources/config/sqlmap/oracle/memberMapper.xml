@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="member.dao.MemberDAO">
+
+    <resultMap id="memberResultMap" type="memberVO">
+        <result property="memberNo"  column="member_no"/>
+        <result property="memberId"  column="member_id"/>
+        <result property="memberPwd" column="member_pwd"/>
+        <result property="nickname"  column="nickname"/>
+        <result property="phone"     column="phone"/>
+        <result property="email"     column="email"/>
+        <result property="snsType"   column="sns_type"/>
+        <result property="regDate"   column="reg_date"/>
+        <result property="role"      column="role"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="memberVO">
+        INSERT INTO project_member (member_no, member_id, member_pwd, nickname, phone, email, sns_type, role, reg_date)
+        VALUES (seq_project_member_no.nextval, #{memberId}, #{memberPwd}, #{nickname}, #{phone}, #{email}, #{snsType}, #{role}, sysdate)
+    </insert>
+
+    <select id="selectById" parameterType="string" resultMap="memberResultMap">
+        SELECT member_no, member_id, member_pwd, nickname, phone, email, sns_type, role,
+               TO_CHAR(reg_date, 'YYYY-MM-DD') AS reg_date
+        FROM project_member
+        WHERE member_id = #{memberId}
+    </select>
+
+    <select id="selectByNo" parameterType="int" resultMap="memberResultMap">
+        SELECT member_no, member_id, member_pwd, nickname, phone, email, sns_type, role,
+               TO_CHAR(reg_date, 'YYYY-MM-DD') AS reg_date
+        FROM project_member
+        WHERE member_no = #{memberNo}
+    </select>
+
+    <update id="update" parameterType="memberVO">
+        UPDATE project_member
+        SET nickname = #{nickname},
+            phone    = #{phone},
+            email    = #{email}
+        WHERE member_no = #{memberNo}
+    </update>
+
+    <delete id="deleteNotifications" parameterType="int">
+        DELETE FROM project_notification WHERE receiver_no = #{memberNo}
+    </delete>
+
+    <delete id="deleteTeamApplies" parameterType="int">
+        DELETE FROM project_team_apply WHERE applicant_no = #{memberNo}
+    </delete>
+
+    <delete id="deleteTeamAppliesByWriter" parameterType="int">
+        DELETE FROM project_team_apply WHERE team_no IN (SELECT no FROM project_team WHERE writer_no = #{memberNo})
+    </delete>
+
+    <delete id="deleteTeams" parameterType="int">
+        DELETE FROM project_team WHERE writer_no = #{memberNo}
+    </delete>
+
+    <delete id="deleteBoards" parameterType="string">
+        DELETE FROM project_board WHERE writer = #{memberId}
+    </delete>
+
+    <delete id="delete" parameterType="int">
+        DELETE FROM project_member WHERE member_no = #{memberNo}
+    </delete>
+
+    <select id="selectAll" resultMap="memberResultMap">
+        SELECT member_no, member_id, member_pwd, nickname, phone, email, sns_type, role,
+               TO_CHAR(reg_date, 'YYYY-MM-DD') AS reg_date
+        FROM project_member
+        ORDER BY member_no
+    </select>
+
+    <select id="countById" parameterType="string" resultType="int">
+        SELECT COUNT(*) FROM project_member WHERE member_id = #{memberId}
+    </select>
+
+</mapper>

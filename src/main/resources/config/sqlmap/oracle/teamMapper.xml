@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="team.dao.TeamDAO">
+
+    <resultMap id="teamResultMap" type="teamVO">
+        <result property="no"             column="no"/>
+        <result property="writerNo"       column="writer_no"/>
+        <result property="writer"         column="writer"/>
+        <result property="title"          column="title"/>
+        <result property="description"    column="description"/>
+        <result property="requirements"   column="requirements"/>
+        <result property="maxMember"      column="max_member"/>
+        <result property="currentMember"  column="current_member"/>
+        <result property="status"         column="status"/>
+        <result property="applyDeadline"  column="apply_deadline"/>
+        <result property="teamDeadline"   column="team_deadline"/>
+        <result property="regDate"        column="reg_date"/>
+    </resultMap>
+
+    <resultMap id="applyResultMap" type="teamApplyVO">
+        <result property="no"           column="no"/>
+        <result property="teamNo"       column="team_no"/>
+        <result property="applicantNo"  column="applicant_no"/>
+        <result property="applicantId"  column="applicant_id"/>
+        <result property="applyContent" column="apply_content"/>
+        <result property="applyStatus"  column="apply_status"/>
+        <result property="regDate"      column="reg_date"/>
+    </resultMap>
+
+    <insert id="insertTeam" parameterType="teamVO">
+        <selectKey keyProperty="no" resultType="int" order="BEFORE">
+            SELECT seq_project_team_no.nextval FROM dual
+        </selectKey>
+        INSERT INTO project_team (no, writer_no, writer, title, description, requirements,
+                            max_member, current_member, status, apply_deadline, team_deadline, reg_date)
+        VALUES (#{no}, #{writerNo}, #{writer}, #{title}, #{description}, #{requirements},
+                #{maxMember}, 1, #{status},
+                TO_DATE(#{applyDeadline}, 'YYYY-MM-DD'),
+                TO_DATE(#{teamDeadline}, 'YYYY-MM-DD'),
+                sysdate)
+    </insert>
+
+    <select id="selectListByWriterNo" parameterType="int" resultMap="teamResultMap">
+        SELECT no, writer_no, writer, title, description, requirements,
+               max_member, current_member, status,
+               TO_CHAR(apply_deadline, 'YYYY-MM-DD') AS apply_deadline,
+               TO_CHAR(team_deadline,  'YYYY-MM-DD') AS team_deadline,
+               TO_CHAR(reg_date, 'YYYY-MM-DD') AS reg_date
+        FROM project_team
+        WHERE writer_no = #{writerNo}
+        ORDER BY no DESC
+    </select>
+
+    <resultMap id="applyWithTeamResultMap" type="teamApplyVO" extends="applyResultMap">
+        <result property="teamTitle" column="team_title"/>
+    </resultMap>
+
+    <select id="selectApplyListByApplicant" parameterType="int" resultMap="applyWithTeamResultMap">
+        SELECT a.no, a.team_no, t.title AS team_title, a.applicant_no, a.applicant_id,
+               a.apply_content, a.apply_status,
+               TO_CHAR(a.reg_date, 'YYYY-MM-DD') AS reg_date
+        FROM project_team_apply a
+        JOIN project_team t ON a.team_no = t.no
+        WHERE a.applicant_no = #{applicantNo}
+        ORDER BY a.no DESC
+    </select>
+
+    <select id="selectList" resultMap="teamResultMap">
+        SELECT no, writer_no, writer, title, description, requirements,
+               max_member, current_member, status,
+               TO_CHAR(apply_deadline, 'YYYY-MM-DD') AS apply_deadline,
+               TO_CHAR(team_deadline,  'YYYY-MM-DD') AS team_deadline,
+               TO_CHAR(reg_date, 'YYYY-MM-DD') AS reg_date
+        FROM project_team
+        ORDER BY no DESC
+    </select>
+
+    <select id="selectTeamByNo" parameterType="int" resultMap="teamResultMap">
+        SELECT no, writer_no, writer, title, description, requirements,
+               max_member, current_member, status,
+               TO_CHAR(apply_deadline, 'YYYY-MM-DD') AS apply_deadline,
+               TO_CHAR(team_deadline,  'YYYY-MM-DD') AS team_deadline,
+               TO_CHAR(reg_date, 'YYYY-MM-DD') AS reg_date
+        FROM project_team
+        WHERE no = #{teamNo}
+    </select>
+
+    <update id="updateTeamStatus" parameterType="map">
+        UPDATE project_team SET status = #{status} WHERE no = #{teamNo}
+    </update>
+
+    <update id="updateCurrentMember" parameterType="map">
+        UPDATE project_team SET current_member = current_member + #{delta} WHERE no = #{teamNo}
+    </update>
+
+    <update id="updateTeam" parameterType="teamVO">
+        UPDATE project_team
+        SET title           = #{title},
+            description     = #{description},
+            requirements    = #{requirements},
+            max_member      = #{maxMember},
+            apply_deadline  = <choose>
+                                  <when test="applyDeadline != null and applyDeadline != ''">TO_DATE(#{applyDeadline}, 'YYYY-MM-DD')</when>
+                                  <otherwise>NULL</otherwise>
+                              </choose>,
+            team_deadline   = <choose>
+                                  <when test="teamDeadline != null and teamDeadline != ''">TO_DATE(#{teamDeadline}, 'YYYY-MM-DD')</when>
+                                  <otherwise>NULL</otherwise>
+                              </choose>
+        WHERE no = #{no}
+    </update>
+
+    <delete id="deleteAppliesByTeamNo" parameterType="int">
+        DELETE FROM project_team_apply WHERE team_no = #{teamNo}
+    </delete>
+
+    <delete id="deleteTeam" parameterType="int">
+        DELETE FROM project_team WHERE no = #{no}
+    </delete>
+
+    <!-- 신청 관련 -->
+
+    <insert id="insertApply" parameterType="teamApplyVO">
+        <selectKey keyProperty="no" resultType="int" order="BEFORE">
+            SELECT seq_project_team_apply_no.nextval FROM dual
+        </selectKey>
+        INSERT INTO project_team_apply (no, team_no, applicant_no, applicant_id, apply_content, apply_status, reg_date)
+        VALUES (#{no}, #{teamNo}, #{applicantNo}, #{applicantId}, #{applyContent}, 'PENDING', sysdate)
+    </insert>
+
+    <select id="selectApplyListByTeam" parameterType="int" resultMap="applyResultMap">
+        SELECT no, team_no, applicant_no, applicant_id, apply_content, apply_status,
+               TO_CHAR(reg_date, 'YYYY-MM-DD') AS reg_date
+        FROM project_team_apply
+        WHERE team_no = #{teamNo}
+        ORDER BY no DESC
+    </select>
+
+    <select id="selectApplyByNo" parameterType="int" resultMap="applyResultMap">
+        SELECT no, team_no, applicant_no, applicant_id, apply_content, apply_status,
+               TO_CHAR(reg_date, 'YYYY-MM-DD') AS reg_date
+        FROM project_team_apply
+        WHERE no = #{applyNo}
+    </select>
+
+    <update id="updateApplyStatus" parameterType="map">
+        UPDATE project_team_apply SET apply_status = #{status} WHERE no = #{applyNo}
+    </update>
+
+    <select id="selectMyApply" parameterType="map" resultMap="applyResultMap">
+        SELECT no, team_no, applicant_no, applicant_id, apply_content, apply_status,
+               TO_CHAR(reg_date, 'YYYY-MM-DD') AS reg_date
+        FROM project_team_apply
+        WHERE team_no = #{teamNo} AND applicant_no = #{memberNo}
+    </select>
+
+</mapper>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="reply.dao.ReplyDAO">
+
+    <resultMap id="replyResultMap" type="replyVO">
+        <result property="no"       column="no"/>
+        <result property="boardNo"  column="board_no"/>
+        <result property="parentNo" column="parent_no"/>
+        <result property="content"  column="content"/>
+        <result property="writer"   column="writer"/>
+        <result property="regDate"  column="reg_date"/>
+        <result property="depth"    column="depth"/>
+    </resultMap>
+
+    <select id="selectReplyAll" parameterType="int" resultMap="replyResultMap">
+        SELECT no, board_no, parent_no, depth, content, writer,
+               TO_CHAR(reg_date, 'YYYY-MM-DD HH24:MI') AS reg_date
+        FROM project_reply
+        WHERE board_no = #{boardNo}
+        ORDER BY no
+    </select>
+
+    <insert id="insertReply" parameterType="replyVO">
+        INSERT INTO project_reply (no, board_no, parent_no, depth, content, writer, reg_date)
+        VALUES (seq_project_reply_no.nextval, #{boardNo}, 0, 0, #{content}, #{writer}, sysdate)
+    </insert>
+
+    <insert id="insertChildReply" parameterType="replyVO">
+        INSERT INTO project_reply (no, board_no, parent_no, depth, content, writer, reg_date)
+        VALUES (seq_project_reply_no.nextval, #{boardNo}, #{parentNo}, #{depth}, #{content}, #{writer}, sysdate)
+    </insert>
+
+    <update id="updateReply" parameterType="replyVO">
+        UPDATE project_reply SET content = #{content} WHERE no = #{no}
+    </update>
+
+    <delete id="deleteReply" parameterType="int">
+        DELETE FROM project_reply WHERE no = #{no}
+    </delete>
+
+</mapper>

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="board.dao.BoardDAO">
+
+    <resultMap id="boardResultMap" type="boardVO">
+        <result property="no"       column="no"/>
+        <result property="title"    column="title"/>
+        <result property="writer"   column="writer"/>
+        <result property="content"  column="content"/>
+        <result property="viewCnt"  column="view_cnt"/>
+        <result property="regDate"  column="reg_date"/>
+        <result property="replyCnt" column="reply_cnt"/>
+    </resultMap>
+
+    <select id="selectList" resultMap="boardResultMap">
+        SELECT b.no, b.title, b.writer, b.view_cnt,
+               TO_CHAR(b.reg_date, 'YYYY-MM-DD') AS reg_date,
+               (SELECT COUNT(*) FROM project_reply r WHERE r.board_no = b.no) AS reply_cnt
+        FROM project_board b
+        ORDER BY b.no DESC
+    </select>
+
+    <select id="selectListBySearch" parameterType="map" resultMap="boardResultMap">
+        SELECT b.no, b.title, b.writer, b.view_cnt,
+               TO_CHAR(b.reg_date, 'YYYY-MM-DD') AS reg_date,
+               (SELECT COUNT(*) FROM project_reply r WHERE r.board_no = b.no) AS reply_cnt
+        FROM project_board b
+        WHERE
+        <choose>
+            <when test="type == 'content'">
+                b.content LIKE '%' || #{keyword} || '%'
+            </when>
+            <when test="type == 'titleContent'">
+                (b.title LIKE '%' || #{keyword} || '%' OR b.content LIKE '%' || #{keyword} || '%')
+            </when>
+            <when test="type == 'writer'">
+                b.writer LIKE '%' || #{keyword} || '%'
+            </when>
+            <otherwise>
+                b.title LIKE '%' || #{keyword} || '%'
+            </otherwise>
+        </choose>
+        ORDER BY b.no DESC
+    </select>
+
+    <select id="selectListByWriter" parameterType="string" resultMap="boardResultMap">
+        SELECT b.no, b.title, b.writer, b.view_cnt,
+               TO_CHAR(b.reg_date, 'YYYY-MM-DD') AS reg_date,
+               (SELECT COUNT(*) FROM project_reply r WHERE r.board_no = b.no) AS reply_cnt
+        FROM project_board b
+        WHERE b.writer = #{writer}
+        ORDER BY b.no DESC
+    </select>
+
+    <select id="selectOne" parameterType="int" resultMap="boardResultMap">
+        SELECT no, title, writer, content, view_cnt,
+               TO_CHAR(reg_date, 'YYYY-MM-DD') AS reg_date
+        FROM project_board
+        WHERE no = #{no}
+    </select>
+
+    <insert id="insert" parameterType="boardVO">
+        <selectKey keyProperty="no" resultType="int" order="BEFORE">
+            SELECT seq_project_board_no.nextval FROM dual
+        </selectKey>
+        INSERT INTO project_board (no, title, writer, content, reg_date)
+        VALUES (#{no}, #{title}, #{writer}, #{content}, sysdate)
+    </insert>
+
+    <update id="update" parameterType="boardVO">
+        UPDATE project_board
+        SET title   = #{title},
+            content = #{content}
+        WHERE no = #{no}
+    </update>
+
+    <delete id="delete" parameterType="int">
+        DELETE FROM project_board WHERE no = #{no}
+    </delete>
+
+    <update id="updateViewCnt" parameterType="int">
+        UPDATE project_board SET view_cnt = view_cnt + 1 WHERE no = #{no}
+    </update>
+
+</mapper>

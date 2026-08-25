@@ -1,0 +1,31 @@
+# ── 빌드 산출물 ──────────────────────────────────────
+/target/
+*.class
+
+# ── IDE (Eclipse) ────────────────────────────────────
+.settings/
+.classpath
+.project
+.factorypath
+*.iml
+
+# ── OS ────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── 로그 ──────────────────────────────────────────────
+*.log
+
+# ── Python (face 인식 서버) ───────────────────────────
+python-face-server/venv/
+python-face-server/**/__pycache__/
+python-face-server/**/*.pyc
+
+# 얼굴 인식 임베딩 — 생체 정보이므로 커밋 금지
+python-face-server/face_data/*.npy
+
+# ── 자격 증명 / 민감 설정 ──────────────────────────────
+# 카카오 REST API 키(kakao.client.id)가 들어있음 → 커밋 금지.
+# 대신 kakao.properties.example 을 커밋해두고 README에 설정 방법 안내.
+# (sqlMapConfig.xml은 확인 결과 typeAliases만 있고 DB 접속정보는 없어 제외 대상 아님 — 그대로 커밋해도 됨)
+src/main/resources/config/kakao.properties
